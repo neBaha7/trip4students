@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ── SEO ───────────────────────────────────────── -->
+    <title>Trip4Students — Travel more, pay less</title>
+    <meta name="description"
+        content="The smartest flight, train and bus aggregator for students. Find verified student fares in seconds.">
+    <meta name="theme-color" content="#0084ff">
+
+    <!-- ── OpenGraph (Telegram / WhatsApp / Slack previews) ── -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Trip4Students — Travel more, pay less">
+    <meta property="og:description"
+        content="The smartest flight, train and bus aggregator for students. Find verified student fares in seconds.">
+    <meta property="og:image" content="assets/icon.png">
+    <meta property="og:url" content="https://trip4students.app">
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Trip4Students — Travel more, pay less">
+    <meta name="twitter:description" content="Find verified student fares in seconds.">
+    <meta name="twitter:image" content="assets/icon.png">
+
+    <!-- ── Favicon / Icons ───────────────────────────── -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/icon.png">
+
+    <!-- ── Styles ────────────────────────────────────── -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+
+        <!-- ── Navigation ─────────────────────────────────── -->
+        <nav class="glass-nav" role="navigation" aria-label="Main navigation">
+            <div class="logo">
+                <img src="assets/icon.png" alt="Trip4Students logo" class="logo-img">
+                <span class="logo-text">Trip4Students</span>
+            </div>
+            <div class="nav-links" role="tablist">
+                <button class="nav-item active" role="tab" aria-selected="true" data-target="search-view"
+                    data-i18n="nav-search">Search</button>
+                <button class="nav-item" role="tab" aria-selected="false" data-target="wallet-view"
+                    data-i18n="nav-wallet">Wallet</button>
+            </div>
+            <div class="controls">
+                <button id="theme-toggle" class="control-btn" aria-label="Toggle dark/light theme">🌙</button>
+                <button id="lang-toggle" class="control-btn" aria-label="Switch language">RU</button>
+            </div>
+        </nav>
+
+        <!-- ── Main Content ───────────────────────────────── -->
+        <main id="main-content">
+
+            <!-- Search View -->
+            <section id="search-view" class="view active" role="tabpanel">
+                <div class="search-container">
+                    <h1 class="hero-title" data-i18n="hero-title">Where are we flying this time?</h1>
+                    <p class="hero-subtitle" data-i18n="hero-subtitle">The best student prices in one tap.</p>
+
+                    <!-- Transport Mode Selector -->
+                    <div class="transport-modes" role="group" aria-label="Transport type">
+                        <button class="mode-btn active" data-mode="all"> <span data-i18n="mode-all">🌍
+                                All</span></button>
+                        <button class="mode-btn" data-mode="flight"> <span data-i18n="mode-flights">✈️
+                                Flights</span></button>
+                        <button class="mode-btn" data-mode="train"> <span data-i18n="mode-trains">🚆
+                                Trains</span></button>
+                        <button class="mode-btn" data-mode="bus"> <span data-i18n="mode-buses">🚌 Buses</span></button>
+                    </div>
+
+                    <!-- Smart Inputs -->
+                    <form id="search-form" class="smart-inputs glass-panel" novalidate>
+                        <div class="input-group">
+                            <span class="label" data-i18n="input-from">From</span>
+                            <input type="text" id="input-from-el" placeholder="From where?" autocomplete="off"
+                                aria-required="true" aria-label="Departure city or airport">
+                            <span class="field-error" id="from-error" aria-live="polite"></span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="input-group">
+                            <span class="label" data-i18n="input-to">To</span>
+                            <input type="text" id="input-to-el" placeholder="To where?" autocomplete="off"
+                                aria-required="true" aria-label="Destination city or airport">
+                            <span class="field-error" id="to-error" aria-live="polite"></span>
+                        </div>
+                    </form>
+
+                    <!-- Calendar Slider -->
+                    <div class="calendar-slider">
+                        <div class="calendar-header">
+                            <h2 data-i18n="calendar-title">Flexible Dates</h2>
+                            <span class="subtext" data-i18n="calendar-subtext">Best prices in green</span>
+                        </div>
+                        <div class="slider-track" id="calendar-track" role="listbox" aria-label="Select travel date">
+                        </div>
+                    </div>
+
+                    <button class="main-search-btn" id="search-btn" data-i18n="search-btn" type="submit"
+                        form="search-form">Find Tickets</button>
+                    <p class="search-hint" data-i18n="search-hint">We show only verified student fares.</p>
+                </div>
+
+                <!-- Results -->
+                <div class="results-container" id="results-container">
+                    <div class="filters" role="group" aria-label="Sort results">
+                        <button class="filter-btn active" data-i18n="filter-best">Best Value. Perfect for your
+                            budget.</button>
+                        <button class="filter-btn" data-i18n="filter-fast">Fastest. Make it to class.</button>
+                        <button class="filter-btn" data-i18n="filter-eco">Student Pick. More baggage, less
+                            money.</button>
+                    </div>
+
+                    <!-- Skeleton Loaders (shown while "loading") -->
+                    <div class="flights-list" id="flights-list">
+                        <div class="flight-card skeleton-card" aria-hidden="true">
+                            <div class="skeleton skeleton-line short"></div>
+                            <div class="skeleton skeleton-line"></div>
+                            <div class="skeleton skeleton-line medium"></div>
+                        </div>
+                        <div class="flight-card skeleton-card" aria-hidden="true">
+                            <div class="skeleton skeleton-line short"></div>
+                            <div class="skeleton skeleton-line"></div>
+                            <div class="skeleton skeleton-line medium"></div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State (hidden by default) -->
+                    <div class="empty-state hidden" id="empty-state" aria-live="polite">
+                        <div class="empty-state-icon">🌍</div>
+                        <h2 class="empty-state-title" data-i18n="empty-title">No trips found.</h2>
+                        <p class="empty-state-msg" data-i18n="empty-msg">Try different dates or another destination.</p>
+                        <button class="main-search-btn empty-retry-btn" data-i18n="empty-btn">Try different
+                            dates</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Wallet View -->
+            <section id="wallet-view" class="view hidden" role="tabpanel">
+                <div class="wallet-header">
+                    <h1 class="hero-title" data-i18n="wallet-title">My Trips</h1>
+                </div>
+
+                <!-- Wallet Cards -->
+                <div class="wallet-stack">
+                    <!-- Status: reserved / booked -->
+                    <div class="wallet-card status-booked">
+                        <div class="wallet-card-header">
+                            <div>
+                                <span class="label" data-i18n="wallet-trip-to">Trip to</span>
+                                <h2>Barcelona</h2>
+                            </div>
+                            <div class="status-badge" data-i18n="status-booked">Almost ready. Pay within 2 hours.</div>
+                        </div>
+                        <div class="wallet-card-body">
+                            <div class="details">
+                                <p><span data-i18n="wallet-date">Date</span>: <strong>13 Oct 2026</strong></p>
+                                <p><span data-i18n="wallet-departs">Departs</span>: <strong>08:00 (STN)</strong></p>
+                            </div>
+                            <div class="checklist">
+                                <h3 data-i18n="checklist-title">Forgotten anything?</h3>
+                                <label class="check-item"><input type="checkbox"> <span data-i18n="check-1">Student ID
+                                        (ISIC). They check it at boarding.</span></label>
+                                <label class="check-item"><input type="checkbox" checked> <span
+                                        data-i18n="check-2">Flight check-in. Opens 24 hours before.</span></label>
+                                <label class="check-item"><input type="checkbox"> <span data-i18n="check-3">Passport
+                                        &amp; visa. Just in case.</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status: past / completed -->
+                    <div class="wallet-card status-past">
+                        <div class="wallet-card-header">
+                            <div>
+                                <span class="label" data-i18n="wallet-trip-to">Trip to</span>
+                                <h2>Berlin</h2>
+                            </div>
+                            <div class="status-badge" style="background: var(--past-grey); color: white;"
+                                data-i18n="status-past">Past</div>
+                        </div>
+                        <div class="wallet-card-body">
+                            <div class="details">
+                                <p><span data-i18n="wallet-date">Date</span>: <strong>05 Sep 2026</strong></p>
+                                <p class="status-msg" data-i18n="wallet-completed">That was awesome. Where to next?</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty wallet state -->
+                    <div class="wallet-empty hidden" id="wallet-empty">
+                        <p class="empty-state-icon">🌍</p>
+                        <p class="empty-state-title" data-i18n="wallet-empty-title">The world is waiting for you.</p>
+                        <p class="empty-state-msg" data-i18n="wallet-empty-msg">Start with your first trip search.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ── Cookie Consent Banner ──────────────────────── -->
+        <div id="cookie-banner" class="cookie-banner" role="dialog" aria-label="Cookie consent" aria-live="polite">
+            <p class="cookie-text" data-i18n="cookie-text">
+                We use cookies to give you the best student travel experience. 🍪
+            </p>
+            <div class="cookie-actions">
+                <button id="cookie-accept" class="cookie-btn primary" data-i18n="cookie-accept">Accept all</button>
+                <button id="cookie-decline" class="cookie-btn secondary" data-i18n="cookie-decline">Essential
+                    only</button>
+            </div>
+        </div>
+
+    </div><!-- /#app -->
+    <script src="js/app.js"></script>
+</body>
+
+</html>

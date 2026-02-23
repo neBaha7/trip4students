@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Environment variables - NEVER commit API keys
+.env
+.env.local
+.env.development
+.env.production
+.env*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Editor directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs (for when a bundler is added)
+dist/
+build/
+.cache/
+
+# Node (for future backend/tooling usage)
+node_modules/
+package-lock.json
+
+# Gemini agent files
+.gemini/
