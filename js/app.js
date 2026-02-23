@@ -91,6 +91,15 @@ const TRANSLATIONS = {
 let currentLang = 'en';
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ── Set default date to tomorrow ─────────────────────────
+    const dateInput = document.getElementById('selected-date');
+    if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateInput.value = tomorrow.toISOString().split('T')[0];
+        dateInput.min = new Date().toISOString().split('T')[0]; // block past dates in picker
+    }
+
     // -------------------------
     // Navigation Logic
     // -------------------------
@@ -313,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return val.trim().length >= 2 && !/^\d+$/.test(val.trim());
     }
 
-    document.getElementById('search-btn').addEventListener('click', (e) => {
+    document.getElementById('search-btn').addEventListener('click', async (e) => {
         e.preventDefault();
         let valid = true;
 
@@ -335,8 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!valid) return;
 
-        // ── Simulate Search: show skeletons → inject cards ──
-        flightsList.innerHTML = `
+        // ── 1. Show skeleton loaders ──────────────────────────────────
+        const skeletonHTML = `
             <div class="flight-card skeleton-card" aria-hidden="true">
                 <div class="skeleton skeleton-line short"></div>
                 <div class="skeleton skeleton-line"></div>
@@ -347,58 +356,150 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="skeleton skeleton-line"></div>
                 <div class="skeleton skeleton-line medium"></div>
             </div>`;
+
+        flightsList.innerHTML = skeletonHTML;
         emptyState.classList.add('hidden');
 
-        setTimeout(() => {
-            flightsList.innerHTML = `
+        // ── 2. Build query params ─────────────────────────────────────
+        // Extract IATA code if user typed "London (LHR)" → "LHR"
+        function extractIATA(val) {
+            const match = val.match(/\(([A-Z]{3})\)/);
+            if (match) return match[1];
+            return val.trim().toUpperCase().slice(0, 3);
+        }
+
+        const from = extractIATA(inputFrom.value);
+        const to = extractIATA(inputTo.value);
+        const dateEl = document.getElementById('selected-date');
+        const date = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+        const activeMode = document.querySelector('.mode-btn.active')?.dataset.mode || 'all';
+        const token = localStorage.getItem('auth_token') || '';
+
+        const params = new URLSearchParams({ from, to, date, mode: activeMode });
+        const API_BASE = window.location.port === '8000'
+            ? 'http://localhost:3001'   // dev: frontend on 8000, API on 3001
+            : 'https://trip4students-production.up.railway.app'; // prod
+
+        // ── 3. Fetch from API ─────────────────────────────────────────
+        let results = [];
+        let apiError = null;
+
+        try {
+            const res = await fetch(`${API_BASE}/api/flights/search?${params}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || `API error ${res.status}`);
+            }
+
+            const data = await res.json();
+            results = data.results || [];
+
+        } catch (err) {
+            apiError = err.message;
+            console.warn('API unreachable, using demo data:', err.message);
+
+            // ── Fallback demo data (shown when server is offline) ──────
+            results = [
+                {
+                    type: 'flight', carrier: 'Ryanair', flightNumber: 'FR1234',
+                    from, to,
+                    departureTime: `${date}T08:00:00`, arrivalTime: `${date}T11:15:00`,
+                    duration: 'PT2H15M', stops: 0,
+                    basePrice: 45.00, studentPrice: 39.99, currency: 'EUR'
+                },
+                {
+                    type: 'flight', carrier: 'easyJet', flightNumber: 'U21812',
+                    from, to,
+                    departureTime: `${date}T14:30:00`, arrivalTime: `${date}T17:50:00`,
+                    duration: 'PT2H20M', stops: 0,
+                    basePrice: 52.00, studentPrice: null, currency: 'EUR'
+                }
+            ];
+        }
+
+        // ── 4. Render results ─────────────────────────────────────────
+        if (results.length === 0) {
+            flightsList.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        const typeIcon = { flight: '✈️', train: '🚆', bus: '🚌' };
+
+        function parseDuration(iso) {
+            // PT2H15M → "2h 15m"
+            const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+            if (!m) return iso;
+            const h = m[1] ? `${m[1]}h ` : '';
+            const min = m[2] ? `${m[2]}m` : '';
+            return (h + min).trim();
+        }
+
+        function fmtTime(isoStr) {
+            const d = new Date(isoStr);
+            return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        const cardsHTML = results.map(f => {
+            const icon = typeIcon[f.type] || '✈️';
+            const depTime = fmtTime(f.departureTime);
+            const arrTime = fmtTime(f.arrivalTime);
+            const duration = parseDuration(f.duration);
+            const stopsText = f.stops === 0
+                ? (currentLang === 'ru' ? 'Прямой' : 'Direct')
+                : `${f.stops} stop${f.stops > 1 ? 's' : ''}`;
+            const price = f.studentPrice
+                ? `<span class="amount">${f.currency === 'EUR' ? '€' : f.currency}${f.studentPrice.toFixed(2)}</span>
+                   <span class="price-tag student-price">${currentLang === 'ru' ? 'Студенческая цена 🎓' : 'Student price 🎓'}</span>`
+                : `<span class="amount">${f.currency === 'EUR' ? '€' : f.currency}${f.basePrice.toFixed(2)}</span>
+                   <span class="price-tag" data-i18n="price-tag">${TRANSLATIONS[currentLang]['price-tag']}</span>`;
+
+            return `
             <div class="flight-card">
                 <div class="airline-info">
-                    <span class="airline-logo">🟢</span>
-                    <span class="airline-name">Ryanair</span>
+                    <span class="airline-logo">${icon}</span>
+                    <span class="airline-name">${f.carrier}</span>
+                    <span class="flight-num">${f.flightNumber}</span>
                 </div>
                 <div class="flight-times">
-                    <div class="time-block"><span class="time">08:00</span><span class="airport">${inputFrom.value.slice(0, 3).toUpperCase()}</span></div>
-                    <div class="flight-duration">
-                        <span class="duration">2h 15m</span>
-                        <div class="line"></div>
-                        <span class="stops" data-i18n="flight-direct">Direct</span>
+                    <div class="time-block">
+                        <span class="time">${depTime}</span>
+                        <span class="airport">${f.from}</span>
                     </div>
-                    <div class="time-block"><span class="time">11:15</span><span class="airport">${inputTo.value.slice(0, 3).toUpperCase()}</span></div>
+                    <div class="flight-duration">
+                        <span class="duration">${duration}</span>
+                        <div class="line"></div>
+                        <span class="stops">${stopsText}</span>
+                    </div>
+                    <div class="time-block">
+                        <span class="time">${arrTime}</span>
+                        <span class="airport">${f.to}</span>
+                    </div>
                 </div>
                 <div class="flight-price">
-                    <div class="price-block">
-                        <span class="amount">€45</span>
-                        <span class="price-tag" data-i18n="price-tag">Low price. Book now.</span>
-                    </div>
-                    <button class="select-btn" data-i18n="btn-select">Select</button>
-                </div>
-            </div>
-            <div class="flight-card">
-                <div class="airline-info">
-                    <span class="airline-logo">🟠</span>
-                    <span class="airline-name">easyJet</span>
-                </div>
-                <div class="flight-times">
-                    <div class="time-block"><span class="time">14:30</span><span class="airport">${inputFrom.value.slice(0, 3).toUpperCase()}</span></div>
-                    <div class="flight-duration">
-                        <span class="duration">2h 20m</span>
-                        <div class="line"></div>
-                        <span class="stops" data-i18n="flight-direct">Direct</span>
-                    </div>
-                    <div class="time-block"><span class="time">17:50</span><span class="airport">${inputTo.value.slice(0, 3).toUpperCase()}</span></div>
-                </div>
-                <div class="flight-price">
-                    <div class="price-block">
-                        <span class="amount">€52</span>
-                        <span class="price-tag" data-i18n="price-tag">Low price. Book now.</span>
-                    </div>
-                    <button class="select-btn" data-i18n="btn-select">Select</button>
+                    <div class="price-block">${price}</div>
+                    <button class="select-btn" data-i18n="btn-select">${TRANSLATIONS[currentLang]['btn-select']}</button>
                 </div>
             </div>`;
+        }).join('');
 
-            // Re-apply 3D effect to newly injected cards
-            apply3DEffect(document.querySelectorAll('.flight-card:not(.skeleton-card)'));
-        }, 1200); // 1.2s fake loading time
+        flightsList.innerHTML = cardsHTML;
+
+        // Re-apply 3D effect to newly rendered cards
+        apply3DEffect(document.querySelectorAll('.flight-card:not(.skeleton-card)'));
+
+        // Show banner if we fell back to demo data
+        if (apiError) {
+            const notice = document.createElement('p');
+            notice.className = 'api-notice';
+            notice.textContent = currentLang === 'ru'
+                ? '⚠️ Сервер недоступен — показаны демо-данные.'
+                : '⚠️ Server offline — showing demo data.';
+            flightsList.prepend(notice);
+        }
     });
 
 });
