@@ -376,9 +376,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('auth_token') || '';
 
         const params = new URLSearchParams({ from, to, date, mode: activeMode });
+        // dev → localhost:3001 | Vercel → same origin /api | other → Railway fallback
+        const host = window.location.hostname;
         const API_BASE = window.location.port === '8000'
-            ? 'http://localhost:3001'   // dev: frontend on 8000, API on 3001
-            : 'https://trip4students-production.up.railway.app'; // prod
+            ? 'http://localhost:3001'
+            : host.includes('vercel.app') || host.includes('trip4students.com')
+                ? ''                                                    // Vercel: same-origin /api
+                : 'https://trip4students-production.up.railway.app';   // Railway fallback
 
         // ── 3. Fetch from API ─────────────────────────────────────────
         let results = [];
@@ -445,24 +449,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ── Official booking URL per carrier ──────────────────────────
         function bookingUrl(f) {
-            const dep = f.departureTime.slice(0, 10); // YYYY-MM-DD
-            const from = encodeURIComponent(f.from);
-            const to = encodeURIComponent(f.to);
+            // Skyscanner date format: YYMMDD  e.g. 2026-05-15 → 260515
+            const raw = f.departureTime.slice(0, 10);          // "2026-05-15"
+            const skDate = raw.slice(2).replace(/-/g, '');     // "260515"
+            const fromIata = f.from.toUpperCase();
+            const toIata = f.to.toUpperCase();
 
-            const carrierUrls = {
-                // Airlines
-                'Ryanair': `https://www.ryanair.com/gb/en/cheap-flights/${f.from.toLowerCase()}-to-${f.to.toLowerCase()}/`,
-                'easyJet': `https://www.easyjet.com/en/cheap-flights/${f.from.toLowerCase()}-${f.to.toLowerCase()}`,
-                'Wizz Air': `https://wizzair.com/#/booking/select-flight/${f.from}/${f.to}/${dep}/null/1/0/0/null`,
-                // Trains
-                'Eurostar': `https://www.eurostar.com/uk-en/train/france/london-paris`,
-                // Buses
-                'FlixBus': `https://shop.flixbus.com/search?departureCity=${from}&arrivalCity=${to}&route=${f.from}-${f.to}&departureDate=${dep}`,
-            };
+            if (f.type === 'train' || f.type === 'bus') {
+                // Rome2rio handles trains, buses, ferries — just needs city codes
+                return `https://www.rome2rio.com/s/${fromIata}/${toIata}`;
+            }
 
-            // Fallback → Google Flights deep link (works for any real Amadeus result)
-            return carrierUrls[f.carrier]
-                || `https://www.google.com/travel/flights?q=Flights+from+${from}+to+${to}&hl=en&curr=EUR`;
+            // Skyscanner flight deep link — accepts IATA codes directly, always works
+            return `https://www.skyscanner.net/transport/flights/${fromIata}/${toIata}/${skDate}/?adults=1&children=0&cabinclass=economy`;
         }
 
         const cardsHTML = results.map(f => {
