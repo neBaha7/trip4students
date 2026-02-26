@@ -376,13 +376,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('auth_token') || '';
 
         const params = new URLSearchParams({ from, to, date, mode: activeMode });
-        // dev → localhost:3001 | Vercel → same origin /api | other → Railway fallback
+        // dev → localhost:3001 | Vercel → same origin /api | GitHub Pages → Vercel URL
         const host = window.location.hostname;
         const API_BASE = window.location.port === '8000'
             ? 'http://localhost:3001'
             : host.includes('vercel.app') || host.includes('trip4students.com')
-                ? ''                                                    // Vercel: same-origin /api
-                : 'https://trip4students-production.up.railway.app';   // Railway fallback
+                ? ''                                                           // Vercel: same-origin
+                : 'https://trip4students.vercel.app';                         // GitHub Pages → Vercel
 
         // ── 3. Fetch from API ─────────────────────────────────────────
         let results = [];
