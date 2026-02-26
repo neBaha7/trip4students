@@ -2,7 +2,7 @@
 // Proxies Amadeus flight search. Deployed automatically from GitHub.
 // CORS allows nebaha7.github.io (GitHub Pages) → no Railway needed.
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // ── CORS ──────────────────────────────────────────────────────────
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
