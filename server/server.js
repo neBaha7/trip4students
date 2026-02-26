@@ -9,6 +9,7 @@ const { authLimiter, searchLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
 const flightRoutes = require('./routes/flights');
+const searchRoutes = require('./routes/search');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -45,6 +46,7 @@ app.use(generalLimiter);
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/flights', searchLimiter, flightRoutes);
+app.use('/api/search', searchLimiter, searchRoutes);
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
