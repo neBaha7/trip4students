@@ -1045,3 +1045,47 @@ h1.hero-title {
         justify-content: center;
     }
 }
+/* ── Flight card extras ───────────────────────────── */
+.flight-num {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-left: auto;
+    font-weight: 500;
+}
+
+.price-tag.student-price {
+    color: #34C759;
+    font-weight: 600;
+}
+
+/* ── API offline notice ───────────────────────────── */
+.api-notice {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #FF9500;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Date input ───────────────────────────────────── */
+input[type="date"] {
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-primary);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    width: 100%;
+    cursor: pointer;
+}
+
+/* ── Select button — also works as <a> link ───────── */
+a.select-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    cursor: pointer;
+}

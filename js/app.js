@@ -443,6 +443,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         }
 
+        // ── Official booking URL per carrier ──────────────────────────
+        function bookingUrl(f) {
+            const dep = f.departureTime.slice(0, 10); // YYYY-MM-DD
+            const from = encodeURIComponent(f.from);
+            const to = encodeURIComponent(f.to);
+
+            const carrierUrls = {
+                // Airlines
+                'Ryanair': `https://www.ryanair.com/gb/en/cheap-flights/${f.from.toLowerCase()}-to-${f.to.toLowerCase()}/`,
+                'easyJet': `https://www.easyjet.com/en/cheap-flights/${f.from.toLowerCase()}-${f.to.toLowerCase()}`,
+                'Wizz Air': `https://wizzair.com/#/booking/select-flight/${f.from}/${f.to}/${dep}/null/1/0/0/null`,
+                // Trains
+                'Eurostar': `https://www.eurostar.com/uk-en/train/france/london-paris`,
+                // Buses
+                'FlixBus': `https://shop.flixbus.com/search?departureCity=${from}&arrivalCity=${to}&route=${f.from}-${f.to}&departureDate=${dep}`,
+            };
+
+            // Fallback → Google Flights deep link (works for any real Amadeus result)
+            return carrierUrls[f.carrier]
+                || `https://www.google.com/travel/flights?q=Flights+from+${from}+to+${to}&hl=en&curr=EUR`;
+        }
+
         const cardsHTML = results.map(f => {
             const icon = typeIcon[f.type] || '✈️';
             const depTime = fmtTime(f.departureTime);
@@ -456,6 +478,8 @@ document.addEventListener('DOMContentLoaded', () => {
                    <span class="price-tag student-price">${currentLang === 'ru' ? 'Студенческая цена 🎓' : 'Student price 🎓'}</span>`
                 : `<span class="amount">${f.currency === 'EUR' ? '€' : f.currency}${f.basePrice.toFixed(2)}</span>
                    <span class="price-tag" data-i18n="price-tag">${TRANSLATIONS[currentLang]['price-tag']}</span>`;
+            const btnLabel = TRANSLATIONS[currentLang]['btn-select'];
+            const url = bookingUrl(f);
 
             return `
             <div class="flight-card">
@@ -481,7 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="flight-price">
                     <div class="price-block">${price}</div>
-                    <button class="select-btn" data-i18n="btn-select">${TRANSLATIONS[currentLang]['btn-select']}</button>
+                    <a class="select-btn" href="${url}" target="_blank" rel="noopener noreferrer"
+                       aria-label="Book ${f.carrier} flight on official site">${btnLabel}</a>
                 </div>
             </div>`;
         }).join('');
